@@ -35,12 +35,12 @@ class MetaConv2d_update(nn.Module):
         : return output shape is [batch_size, node_num, seq_len_out, output_dim]
         """
         # [B, N, d_mk] -> [B*N, d_mk] -> [B*N, C_in*d] -> [B*N, C_in, d] -> [B*N, C_in, C_out*kernel_size*1] -> [B*N, C_out, C_in, kernel_size] -> [B*N*C_out, C_in, 1, kernel_size]
-        meta_knowledge = torch.reshape(meta_knowledge, (-1, self.meta_dim))
-        w_meta = self.w1_linear(meta_knowledge)
-        w_meta = torch.reshape(w_meta, (-1, self.in_channels, self.d))
-        w_meta = self.w2_linear(w_meta)
-        w_meta = torch.reshape(w_meta, (-1, self.in_channels, self.out_channels, self.kernel_size)).permute(0, 2, 1, 3)
-        w_meta = torch.reshape(w_meta, (-1, self.in_channels, self.kernel_size)).unsqueeze(2)
+        meta_knowledge = torch.reshape(meta_knowledge, (-1, self.meta_dim)) # [B*N, d_mk]
+        w_meta = self.w1_linear(meta_knowledge) # [B*N, C_in*d]
+        w_meta = torch.reshape(w_meta, (-1, self.in_channels, self.d)) # [B*N, C_in, d]
+        w_meta = self.w2_linear(w_meta) # [B*N, C_in, C_out*kernel_size*1]
+        w_meta = torch.reshape(w_meta, (-1, self.in_channels, self.out_channels, self.kernel_size)).permute(0, 2, 1, 3)  
+        w_meta = torch.reshape(w_meta, (-1, self.in_channels, self.kernel_size)).unsqueeze(2) # [B*N, C_out, C_in, kernel_size]
         b_meta = self.b_linear(meta_knowledge).view(-1)
 
         # print("meta_knowledge:{}, w:{}, b:{}".format(meta_knowledge.shape, w_meta.shape, b_meta.shape))
@@ -57,7 +57,7 @@ class MetaConv2d_update(nn.Module):
         # print("group_output shape is", group_output.shape)
         group_output = torch.reshape(group_output, (1, batch_size, node_num, self.out_channels, -1)).squeeze(0)
         group_output = group_output.permute(0, 2, 1, 3)
-        return group_output
+        return group_output #[B*N*C_out, C_in, 1, kernel_size]
 
 class nconv(nn.Module):
     def __init__(self):
